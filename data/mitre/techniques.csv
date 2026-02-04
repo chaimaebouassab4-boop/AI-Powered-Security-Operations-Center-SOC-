@@ -1,0 +1,4 @@
+technique_id,technique_name,tactic,pattern
+T1110,Brute Force,credential_access,"Failed.*password|authentication failure"
+T1046,Network Service Scanning,discovery,"nmap|port scan"
+T1190,Exploit Public-Facing Application,initial_access,"404|500|exploit"

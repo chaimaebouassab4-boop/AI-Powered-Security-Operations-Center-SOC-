@@ -1,0 +1,40 @@
+import pytest
+from agents.trust_agent.trust import TrustAgent
+
+class TestTrustAgent:
+    """Tests pour la calibration de confiance (Atelier A)"""
+    
+    @pytest.fixture
+    def agent(self):
+        """Initialise un TrustAgent avec une configuration de test"""
+        config = {
+            'agents': {
+                'trust_agent': {
+                    'temperature': 1.5,
+                    'calibration_method': 'temperature_scaling'
+                }
+            }
+        }
+        return TrustAgent(config)
+    
+    def test_calibration_range(self, agent):
+        """Vérifie que la confiance calibrée reste toujours entre 0 et 1"""
+        test_confidences = [0.1, 0.5, 0.99]
+        for conf in test_confidences:
+            event = {'llm_confidence': conf}
+            result = agent.calibrate(event)
+            assert 0.0 <= result['calibrated_confidence'] <= 1.0 [cite: 1593]
+
+    def test_temperature_scaling_effect(self, agent):
+        """Vérifie que la calibration réduit la sur-confiance excessive"""
+        event = {'llm_confidence': 0.98} # Un score très (trop) élevé
+        result = agent.calibrate(event)
+        # Avec une température > 1, le score doit être lissé (réduit)
+        assert result['calibrated_confidence'] < event['llm_confidence'] [cite: 1593]
+
+    def test_empty_confidence(self, agent):
+        """Vérifie la robustesse si la confiance est manquante"""
+        event = {} 
+        result = agent.calibrate(event)
+        # Doit retourner une valeur par défaut (ex: 0.5) sans crasher
+        assert 'calibrated_confidence' in result [cite: 1593]

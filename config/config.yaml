@@ -1,0 +1,25 @@
+kafka:
+  bootstrap_servers: "localhost:9093"
+  topics:
+    raw: "events_raw"
+    collected: "events_collected"
+    features: "events_with_features"
+    anomaly: "events_with_anomaly"
+    analyzed: "events_analyzed"
+    calibrated: "events_calibrated"
+    mitre: "events_with_mitre"
+    explained: "events_explained"
+    final: "events_final"
+    alerts: "alerts"
+    metrics: "metrics"
+
+analyzer:
+  threshold: 0.75
+  model_path: "data/models/anomaly_model.pkl"
+
+trust_agent:
+  temperature: 1.5
+  calibration_method: "temperature_scaling"
+
+logging:
+  level: "INFO"

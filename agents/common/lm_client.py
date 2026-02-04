@@ -1,0 +1,23 @@
+import requests, json
+
+class LMClient:
+    def __init__(self, host, model):
+        self.endpoint = f"{host}/v1/chat/completions"
+        self.model = model
+
+    def analyze(self, prompt, event):
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(event)}
+            ]
+        }
+        resp = requests.post(self.endpoint, json=payload, timeout=30).json()
+        content = resp['choices'][0]['message']['content']
+        try:
+            return json.loads(content.replace('```json', '').replace('```', ''))
+        except:
+            return {"raw": content}
+            
+            

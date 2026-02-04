@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/chaimae/soc-ia-unified/agents/log_tailer/log_tailer.py", line 32, in <module>
+    LogTailer('config/config.yaml').tail_logs()
+  File "/home/chaimae/soc-ia-unified/agents/log_tailer/log_tailer.py", line 16, in tail_logs
+    with open('/var/log/auth.log', 'r') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/var/log/auth.log'
