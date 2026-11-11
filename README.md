@@ -1,24 +1,28 @@
 # 🛡️ AI-Powered Security Operations Center (SOC)
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red.svg)](https://attack.mitre.org/)
 [![Kafka](https://img.shields.io/badge/Apache-Kafka-black.svg)](https://kafka.apache.org/)
 [![LLM](https://img.shields.io/badge/LLM-Llama%203-purple.svg)](https://llama.meta.com/)
 
 > An intelligent Security Operations Center that autonomously detects and responds to cyberattacks using Large Language Models (Llama 3), Machine Learning, and explainable AI mapped to the MITRE ATT&CK framework.
 
-[🎥 Watch Demo](#demo) | [📖 Read Docs](#documentation) | [🚀 Quick Start](#quick-start) | [📊 Results](#results)
+[🎥 Watch Demo](#demo) | [📖 Read Docs](#documentation) | [🚀 Quick Start](#quick-start) | [📊 Results](#current-status-and-results)
 
 ---
 
 ## 🎯 Project Highlights
 
-- **95%+ Detection Accuracy** against real-world cyberattacks (SSH brute-force, port scans, web exploits)
-- **40% Reduction in False Positives** through ML-based confidence calibration
-- **Real-time Processing**: 1000+ events/minute with <500ms latency
-- **Explainable AI**: Every threat includes MITRE ATT&CK technique + human-readable justification
-- **Production-Grade Architecture**: Distributed, scalable, resilient with Apache Kafka
+Academic / lab project. A multi-agent Security Operations Center pipeline that:
+
+- Ingests system logs, extracts features, and scores anomalies with Isolation Forest
+- Sends events to a **local** Llama 3 model (LM Studio) for threat assessment
+- Applies fixed temperature scaling (`T = 1.5`) to the model's confidence score
+- Maps matched events to MITRE ATT&CK techniques T1110, T1046, and T1190
+- Generates a short natural-language explanation and a BLOCK / ALERT / MONITOR action
+- Uses Apache Kafka between agents and a Flask dashboard for inspection
+
+Lab simulations (screenshots in `screenshots/`) include SSH brute-force-style activity, Nmap scanning, and Gobuster web fuzzing. This repository does not yet include a labeled evaluation or published detection metrics.
 
 ---
 
@@ -30,7 +34,7 @@
 - [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Results](#results)
+- [Current status and results](#current-status-and-results)
 - [Project Structure](#project-structure)
 - [Technologies](#technologies)
 - [Contributing](#contributing)
@@ -41,26 +45,14 @@
 
 ## 🔍 Overview
 
-Modern Security Operations Centers (SOCs) face a critical challenge: **95% of security alerts are false positives**, overwhelming analysts and causing alert fatigue. This project addresses this problem by building an **AI-powered SOC** that:
+This project explores how a **local**, privacy-preserving stack (Kafka, Isolation Forest, Llama 3 via LM Studio) can be wired into a SOC-style pipeline: ingest, detect, explain, and respond, with MITRE ATT&CK tags on matched events.
 
-1. **Autonomously detects** cyberattacks using local LLM (Llama 3) + Machine Learning
-2. **Reduces false positives** by 40% through confidence calibration techniques
-3. **Explains decisions** with MITRE ATT&CK mapping and natural language justifications
-4. **Scales horizontally** using Apache Kafka message queues
+It is a lab / academic system, not a production SOC. Detection currently combines:
 
-### Problem Statement
-
-- Security analysts spend **70% of their time** investigating false positives
-- Traditional rule-based systems miss **zero-day attacks** and novel attack patterns
-- Black-box AI decisions lack **explainability** required for security operations
-
-### Solution
-
-A multi-agent SOC architecture combining:
-- **Unsupervised ML** (Isolation Forest) for anomaly detection
-- **Large Language Models** for intelligent threat assessment
-- **Confidence Calibration** (Platt/Temperature Scaling) for accuracy
-- **MITRE ATT&CK Integration** for standardized threat intelligence
+- Heuristic flags (for example failed-authentication keywords and HTTP error responses)
+- An Isolation Forest trained online after a warmup of 80 events
+- An LLM judgment, with a fixed temperature-scaling step on the confidence score
+- Regex-based MITRE mapping from `data/mitre/techniques.csv` (three techniques)
 
 ---
 
@@ -118,26 +110,26 @@ events_raw → events_collected → events_with_features → events_with_anomaly
 - **Hybrid Scoring**: Combines heuristics + ML anomaly scores + LLM assessment
 - **Zero-Day Detection**: Unsupervised learning detects unknown attack patterns
 
-### 📊 Machine Learning
-- **Isolation Forest**: Anomaly detection on extracted features
-- **Confidence Calibration**: Platt Scaling & Temperature Scaling
-- **Model Evaluation**: ROC curves, AUC, Brier scores, reliability diagrams
+### 📊 Machine learning and calibration
+
+- **Isolation Forest** on a small feature set (`has_failed`, `msg_len`, `hour`, `is_http`, `is_error`), trained online after 80 events.
+- **Temperature scaling** with a fixed `T = 1.5` (not a calibrator fitted on a labeled set; Platt scaling is not implemented).
+- Unit tests cover feature extraction and that calibrated confidence stays in [0, 1]. A formal ROC / Brier evaluation is not in this repository yet.
 
 ### 🔍 Explainability
 - **MITRE ATT&CK Mapping**: Automatic technique classification (T1110, T1046, T1190)
 - **XAI Module**: Natural language explanations for every threat decision
 - **Transparency**: Full audit trail of detection logic
 
-### 📈 Performance
-- **Real-time**: <500ms average latency per event
-- **Scalable**: Kafka architecture handles 1000+ events/min
-- **Resilient**: Fault-tolerant with consumer groups
+### 🎯 Attack coverage (lab)
 
-### 🎯 Attack Coverage
-Validated against real-world attacks:
-- ✅ **SSH Brute-Force** (Hydra) → T1110 (Credential Access)
-- ✅ **Port Scanning** (Nmap) → T1046 (Discovery)
-- ✅ **Web Fuzzing** (Gobuster) → T1190 (Initial Access)
+Exercised in a lab against:
+
+- SSH brute-force style activity → T1110
+- Port scanning (Nmap) → T1046
+- Web fuzzing (Gobuster) → T1190
+
+See `screenshots/` for examples. These are demonstrations, not a measured detection rate.
 
 ---
 
@@ -154,8 +146,8 @@ Validated against real-world attacks:
 ### One-Command Setup (Docker)
 
 ```bash
-git clone https://github.com/yourusername/ai-powered-soc.git
-cd ai-powered-soc
+git clone https://github.com/chaimaebouassab4-boop/AI-Powered-Security-Operations-Center-SOC-.git
+cd AI-Powered-Security-Operations-Center-SOC-
 docker-compose up -d
 ./scripts/setup.sh
 ./scripts/start_all.sh
@@ -183,8 +175,8 @@ cd attacks/scripts
 ### Step 1: Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/ai-powered-soc.git
-cd ai-powered-soc
+git clone https://github.com/chaimaebouassab4-boop/AI-Powered-Security-Operations-Center-SOC-.git
+cd AI-Powered-Security-Operations-Center-SOC-
 ```
 
 ### Step 2: Install Dependencies
@@ -292,50 +284,33 @@ jupyter notebook
 
 ---
 
-## 📊 Results
+## 📊 Current status and results
 
-### Detection Performance
+There is **no published evaluation dataset or metrics report** in this repository, so this README does not claim an accuracy or workload figure.
 
-| Metric | Before AI | With AI | Improvement |
-|--------|-----------|---------|-------------|
-| **Detection Rate** | 78% | **95%** | **+17%** |
-| **False Positive Rate** | 25% | **15%** | **-40%** |
-| **Response Time** | 2.3s | **0.4s** | **-82%** |
-| **Analyst Workload** | 100% | **60%** | **-40%** |
+What *is* documented today:
 
-### Scientific Validation
+- End-to-end agent pipeline and Kafka topic flow (see Architecture above)
+- Isolation Forest anomaly scoring and a fixed-temperature confidence step
+- Regex MITRE mapping for T1110, T1046, and T1190
+- Lab screenshots of Nmap, Gobuster, and pipeline events
+- Unit tests for features, a basic anomaly path, and confidence range checks
+- An integration test that waits for an event to reach `events_final` (allowed latency: under 60 seconds)
 
-**ROC Curve Analysis:**
-- AUC Score: **0.93** (Excellent)
-- Optimal threshold: 0.72
+The project report included in the repo lists *target* metrics (for example detection rate >90%, false positives <10%). Those are goals, not measured results.
 
-**Calibration Metrics:**
-- Brier Score (before): 0.35
-- Brier Score (after): **0.18** (-48%)
+### Example event shape
 
-**MITRE ATT&CK Coverage:**
-- Techniques Mapped: **10+**
-- Tactics Covered: **6** (Initial Access, Execution, Discovery, Credential Access, etc.)
-
-### Example Detections
+The JSON example below is illustrative of the fields the pipeline is designed to attach. It is not an evaluation result.
 
 ```json
 {
-  "event_id": "a3b2c1d4",
-  "timestamp": "2025-02-04T14:23:15Z",
   "message": "Failed password for admin from 192.168.1.100",
   "anomaly_score": 0.89,
   "threat_level": "critical",
-  "llm_confidence": 0.87,
-  "calibrated_confidence": 0.92,
   "mitre_techniques": [
-    {
-      "technique_id": "T1110",
-      "technique_name": "Brute Force",
-      "tactic": "Credential Access"
-    }
+    {"technique_id": "T1110", "technique_name": "Brute Force", "tactic": "Credential Access"}
   ],
-  "xai_explanation": "This event represents a brute-force attack attempt targeting the SSH service. The repeated failed authentication attempts from a single IP (192.168.1.100) match the T1110 MITRE technique pattern.",
   "action_taken": "BLOCK"
 }
 ```
@@ -345,7 +320,7 @@ jupyter notebook
 ## 📁 Project Structure
 
 ```
-ai-powered-soc/
+AI-Powered-Security-Operations-Center-SOC-/
 ├── agents/                      # All SOC agents
 │   ├── common/                  # Shared utilities
 │   │   ├── kafka_utils.py       # Kafka producer/consumer
@@ -358,43 +333,32 @@ ai-powered-soc/
 │   ├── trust_agent/             # Confidence calibration
 │   ├── mitre_mapper/            # MITRE ATT&CK mapping
 │   ├── xai_explainer/           # Explainable AI
-│   └── responder/               # Automated response
+│   ├── responder/               # Automated response
+│   └── supervisor/
 │
-├── attacks/                     # Attack simulation scripts (Kali)
-│   └── scripts/
-│       ├── 01_ssh_bruteforce.sh
-│       ├── 02_nmap_scan.sh
-│       └── 03_http_fuzzing.sh
-│
-├── config/                      # Configuration files
+├── config/
 │   └── config.yaml              # Central config
 │
-├── data/                        # Data storage
-│   ├── models/                  # Trained ML models
-│   ├── mitre/                   # MITRE techniques DB
-│   └── raw/                     # Raw logs
+├── data/
+│   └── mitre/                   # MITRE techniques (T1110, T1046, T1190)
 │
 ├── dashboard/                   # Web dashboard
-│   ├── app.py                   # Flask app
+│   ├── app.py
 │   └── templates/
+├── dashboard_flask/             # Alternate Flask dashboard
 │
-├── notebooks/                   # Jupyter analysis notebooks
-│   ├── calibration_analysis.ipynb
-│   ├── anomaly_detection.ipynb
-│   └── mitre_analysis.ipynb
-│
-├── scripts/                     # Automation scripts
+├── scripts/
 │   ├── start_all.sh             # Start all agents
-│   ├── create_topics.sh         # Kafka setup
-│   └── setup.sh                 # Installation
+│   └── create_topics.sh         # Kafka setup
 │
 ├── tests/                       # Unit & integration tests
-│   └── test_agents.py
-│
-├── docker-compose.yml           # Infrastructure orchestration
-├── requirements.txt             # Python dependencies
-├── README.md                    # This file
-└── LICENSE                      # MIT License
+├── screenshots/                 # Lab captures (Nmap, Gobuster, pipeline events)
+├── logs/
+├── docker-compose.yml
+├── requirements.txt
+├── README.md
+├── report with steps ofAI-Powered Security Operations Center.pdf
+└── soc pipelines.pdf
 ```
 
 ---
@@ -459,31 +423,24 @@ ai-powered-soc/
 
 ## 📚 Documentation
 
-For detailed documentation, see:
+Additional write-ups bundled in this repository:
 
-- [Installation Guide](docs/installation.md)
-- [Architecture Deep Dive](docs/architecture.md)
-- [API Reference](docs/api.md)
-- [Scientific Report](docs/scientific_report.pdf)
+- [Project report (setup and components)](report%20with%20steps%20ofAI-Powered%20Security%20Operations%20Center.pdf)
+- [SOC pipelines](soc%20pipelines.pdf)
 
 ---
 
 ## 🎥 Demo
 
-### Screenshots
+Lab screenshots in `screenshots/`:
 
-**Dashboard Overview:**
-![Dashboard](screenshots/dashboard.png)
+![Nmap scans](screenshots/nmapscans.png)
 
-**Attack Detection:**
-![Attack Detection](screenshots/detection.png)
+![Gobuster](screenshots/gobuster.png)
 
-**MITRE Heatmap:**
-![MITRE Heatmap](screenshots/mitre_heatmap.png)
+![Pipeline events](screenshots/final%20events.png)
 
-### Video
-
-[▶️ Watch 2-minute demo on YouTube](https://youtube.com/watch?v=your-video)
+![Surveillance logs](screenshots/surveillance%20logs.png)
 
 
 
